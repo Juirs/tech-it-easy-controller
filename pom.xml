@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.tech-it-easy</groupId>
-	<artifactId>controller</artifactId>
+	<artifactId>TechItEasy</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>tech-it-easy-controller</name>
 	<description>Tech it easy controller</description>
