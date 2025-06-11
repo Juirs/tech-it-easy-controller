@@ -10,6 +10,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/televisions")
@@ -42,24 +43,30 @@ public class TelevisionController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Television> getTelevisionById(@PathVariable Long id) {
-        Television television = tvRepository.findById(id)
-                .orElseThrow(() -> new RecordNotFoundException("Television with ID " + id + " not found."));
-        return ResponseEntity.ok(television);
+        Optional<Television> television = this.tvRepository.findById(id);
+        if (television.isPresent()) {
+            return ResponseEntity.ok(television.get());
+        } else {
+            throw new RecordNotFoundException("Television with ID " + id + " not found.");
+        }
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Television> updateTelevision(@PathVariable Long id, @RequestBody Television television) {
         if (television == null || television.getName() == null || television.getName().isEmpty()) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.noContent().build();
         }
-        Television existingTelevision = tvRepository.findById(id)
-                .orElseThrow(() -> new RecordNotFoundException("Television with ID " + id + " not found."));
         if (television.getName().length() > 20) {
             throw new NameTooLongException("Television name exceeds 20 characters.");
         }
-        television.setId(existingTelevision.getId());
-        tvRepository.save(television);
-        return ResponseEntity.ok(television);
+
+        Optional<Television> existingTelevision = this.tvRepository.findById(id);
+        if (existingTelevision.isPresent()) {
+            television.setId(existingTelevision.get().getId());
+            this.tvRepository.save(television);
+            return ResponseEntity.ok(television);
+        }
+        throw new RecordNotFoundException("Television with ID " + id + " not found.");
     }
 
     @DeleteMapping("/{id}")
