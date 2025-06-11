@@ -2,79 +2,72 @@ package com.tech_it_easy.controller.controllers;
 
 import com.tech_it_easy.controller.exceptions.NameTooLongException;
 import com.tech_it_easy.controller.exceptions.RecordNotFoundException;
+import com.tech_it_easy.controller.models.Television;
+import com.tech_it_easy.controller.repositories.TelevisionRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
 @RequestMapping("/televisions")
 public class TelevisionController {
-    private final List<String> database;
+    private final TelevisionRepository tvRepository;
 
-    public TelevisionController() {
-        this.database = new ArrayList<>();
-    }
-
-    @GetMapping()
-    public ResponseEntity<List<String>> getTelevision(@RequestParam(required = false) String brand) {
-        if(brand != null) {
-            List<String> filteredTelevisions = new ArrayList<>();
-            for (String television : database) {
-                if (television.toLowerCase().contains(brand.toLowerCase())) {
-                    filteredTelevisions.add(television);
-                }
-            }
-            return ResponseEntity.ok(filteredTelevisions);
-        }
-        return ResponseEntity.ok(database);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<String> getTelevisionById(@PathVariable int id) {
-        int zeroBasedId = id - 1;
-        if (zeroBasedId < 0 || zeroBasedId >= database.size()) {
-            throw new RecordNotFoundException("Television with ID " + id + " not found.");
-        }
-        return ResponseEntity.ok(database.get(zeroBasedId));
+    public TelevisionController(TelevisionRepository tvRepository) {
+        this.tvRepository = tvRepository;
     }
 
     @PostMapping()
-    public ResponseEntity<String> addTelevision(@RequestBody String television) {
-        if (television.length() > 20) {
+    public ResponseEntity<Television> addTelevision(@RequestBody Television television) {
+        if (television.getName().length() > 20) {
             throw new NameTooLongException("Television name exceeds 20 characters.");
         }
-        database.add(television);
-        int newId = database.size();
-        String location = String.format("/televisions/%d", newId);
-        return ResponseEntity.created(URI.create(location)).build();
+        this.tvRepository.save(television);
+        URI uri = URI.create(ServletUriComponentsBuilder.fromCurrentRequest().path("/" + television.getId()).toUriString());
+        return ResponseEntity.created(uri).body(television);
+    }
+
+    @GetMapping()
+    public ResponseEntity<List<Television>> getTelevision(@RequestParam(required = false) String brand) {
+        if (brand != null) {
+            List<Television> filteredTelevisions = tvRepository.findByBrandIgnoreCase(brand);
+            return ResponseEntity.ok(filteredTelevisions);
+        }
+        List<Television> allTelevisions = tvRepository.findAll();
+        return ResponseEntity.ok(allTelevisions);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Television> getTelevisionById(@PathVariable Long id) {
+        Television television = tvRepository.findById(id)
+                .orElseThrow(() -> new RecordNotFoundException("Television with ID " + id + " not found."));
+        return ResponseEntity.ok(television);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<String> updateTelevision(@PathVariable int id, @RequestBody String television) {
-        if (television == null || television.isEmpty()) {
+    public ResponseEntity<Television> updateTelevision(@PathVariable Long id, @RequestBody Television television) {
+        if (television == null || television.getName() == null || television.getName().isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
-        int zeroBasedId = id - 1;
-        if (zeroBasedId < 0 || zeroBasedId >= database.size()) {
-            throw new RecordNotFoundException("Television with ID " + id + " not found.");
-        }
-        if (television.length() > 20) {
+        Television existingTelevision = tvRepository.findById(id)
+                .orElseThrow(() -> new RecordNotFoundException("Television with ID " + id + " not found."));
+        if (television.getName().length() > 20) {
             throw new NameTooLongException("Television name exceeds 20 characters.");
         }
-        database.set(zeroBasedId, television);
-        return ResponseEntity.ok().build();
+        television.setId(existingTelevision.getId());
+        tvRepository.save(television);
+        return ResponseEntity.ok(television);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteTelevision(@PathVariable int id) {
-        int zeroBasedId = id - 1;
-        if (zeroBasedId < 0 || zeroBasedId >= database.size()) {
+    public ResponseEntity<Void> deleteTelevision(@PathVariable Long id) {
+        if (!tvRepository.existsById(id)) {
             throw new RecordNotFoundException("Television with ID " + id + " not found.");
         }
-        database.remove(zeroBasedId);
+        tvRepository.deleteById(id);
         return ResponseEntity.ok().build();
     }
 }
