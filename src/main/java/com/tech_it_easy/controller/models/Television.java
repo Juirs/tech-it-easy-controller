@@ -40,7 +40,7 @@ public class Television {
     public Television(String type, String brand, String name, Double price, Double availableSize, int refreshRate,
                       Boolean isSmartTv, Boolean hasWiFi, Boolean hasVoiceControl, Boolean hasHDR,
                       Boolean hasBluetooth, Boolean hasAmbiLight, int originalStock, int sold,
-                      LocalDate soldDate, LocalDate stockDate, ScreenType screenType, ScreenQuality screenQuality) {
+                      ScreenType screenType, ScreenQuality screenQuality) {
         this.type = type;
         this.brand = brand;
         this.name = name;
@@ -117,7 +117,7 @@ public class Television {
         this.refreshRate = refreshRate;
     }
 
-    public Boolean getSmartTv() {
+    public Boolean getIsSmartTv() {
         return isSmartTv;
     }
 
@@ -214,10 +214,3 @@ public class Television {
     }
 }
 
-enum ScreenType {
-    LED, OLED, LCD, PLASMA;
-}
-
-enum ScreenQuality {
-    HD, FULL_HD, ULTRA_HD, FOUR_K;
-}
